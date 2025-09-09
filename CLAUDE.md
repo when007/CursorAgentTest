@@ -89,3 +89,4 @@ uv run python -m http.server 8080 --bind 0.0.0.0
 - 正确处理触摸事件以实现移动交互
 - 始终使用 uv 进行 Python 包管理，而不是直接使用 pip
 - 使用 uv run python 而不是直接的 python3 命令
+- 使用claude code提交规范的commit
