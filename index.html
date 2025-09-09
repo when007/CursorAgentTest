@@ -8,7 +8,7 @@
         body {
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             overflow: hidden;
             font-family: Arial, sans-serif;
         }
@@ -22,9 +22,9 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            color: white;
+            color: #b8b8b8;
             font-size: 18px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
             z-index: 10;
         }
         
@@ -32,9 +32,9 @@
             position: absolute;
             bottom: 20px;
             left: 20px;
-            color: white;
+            color: #a0a0a0;
             font-size: 14px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
             z-index: 10;
         }
         
@@ -42,9 +42,9 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: white;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            color: #b8b8b8;
             padding: 12px 24px;
             font-size: 16px;
             border-radius: 25px;
@@ -55,8 +55,8 @@
         }
         
         .effect-button:hover {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(0, 0, 0, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
             transform: scale(1.05);
         }
         
@@ -76,10 +76,12 @@
     </div>
     
     <button class="effect-button" id="effectBtn">切换效果</button>
+    <button class="effect-button" id="pauseBtn" style="right: 180px;">暂停</button>
     
     <canvas id="canvas"></canvas>
     
-    <script>
+        <script src="pause_button.js"></script>
+        <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
@@ -195,7 +197,7 @@
         }
         
         function drawConnections() {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.strokeStyle = 'rgba(80, 80, 80, 0.3)';
             ctx.lineWidth = 1;
             
             for (let i = 0; i < particles.length; i++) {
@@ -222,8 +224,8 @@
                 mouseX, mouseY, 0,
                 mouseX, mouseY, 300
             );
-            gradient.addColorStop(0, 'rgba(102, 126, 234, 0.1)');
-            gradient.addColorStop(1, 'rgba(118, 75, 162, 0.05)');
+            gradient.addColorStop(0, 'rgba(26, 26, 46, 0.1)');
+            gradient.addColorStop(1, 'rgba(22, 33, 62, 0.05)');
             
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -250,7 +252,10 @@
                 ));
             }
             
-            requestAnimationFrame(animate);
+            // 只在没有暂停管理器或未暂停时继续动画循环
+            if (!window.PauseButtonManager || !window.PauseButtonManager.isAnimationPaused()) {
+                requestAnimationFrame(animate);
+            }
         }
         
         // 鼠标移动事件
@@ -288,8 +293,38 @@
             createParticles();
         });
         
+        // 暂停/恢复按钮事件
+        document.getElementById('pauseBtn').addEventListener('click', () => {
+            const pauseBtn = document.getElementById('pauseBtn');
+            if (pauseBtn.textContent === '暂停') {
+                pauseBtn.textContent = '恢复';
+                if (window.pauseAnimation) {
+                    window.pauseAnimation();
+                }
+            } else {
+                pauseBtn.textContent = '暂停';
+                if (window.resumeAnimation) {
+                    window.resumeAnimation();
+                }
+            }
+        });
+        
         // 初始化
         createParticles();
+        
+        // 暴露动画控制函数给全局作用域
+        window.pauseAnimation = () => {
+            if (window.PauseButtonManager) {
+                window.PauseButtonManager.pause();
+            }
+        };
+        
+        window.resumeAnimation = () => {
+            if (window.PauseButtonManager) {
+                window.PauseButtonManager.resume();
+            }
+        };
+        
         animate();
     </script>
 </body>
