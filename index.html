@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酷炫粒子效果</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        #canvas {
+            display: block;
+            cursor: none;
+        }
+        
+        .info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        
+        .effect-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .effect-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: scale(1.05);
+        }
+        
+        .effect-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h1>🌟 酷炫粒子效果 🌟</h1>
+        <p>移动鼠标来控制粒子流动</p>
+    </div>
+    
+    <div class="controls">
+        <p>💡 提示：移动鼠标查看粒子跟随效果</p>
+    </div>
+    
+    <button class="effect-button" id="effectBtn">切换效果</button>
+    
+    <canvas id="canvas"></canvas>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+        let particles = [];
+        let connections = [];
+        let currentEffect = 0;
+        const effects = ['flow', 'spiral', 'explosion', 'wave'];
+        
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.radius = Math.random() * 3 + 1;
+                this.color = `hsl(${Math.random() * 360}, 70%, 60%)`;
+                this.alpha = 1;
+                this.life = 1;
+                this.decay = Math.random() * 0.02 + 0.005;
+            }
+            
+            update() {
+                const dx = mouseX - this.x;
+                const dy = mouseY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                switch(effects[currentEffect]) {
+                    case 'flow':
+                        // 流动效果 - 向鼠标位置移动
+                        if (distance < 200) {
+                            const force = (200 - distance) / 200;
+                            this.vx += (dx / distance) * force * 0.5;
+                            this.vy += (dy / distance) * force * 0.5;
+                        }
+                        break;
+                        
+                    case 'spiral':
+                        // 螺旋效果 - 围绕鼠标旋转
+                        if (distance < 150) {
+                            const angle = Math.atan2(dy, dx);
+                            const spiralForce = (150 - distance) / 150;
+                            this.vx += Math.cos(angle + Math.PI/2) * spiralForce * 0.3;
+                            this.vy += Math.sin(angle + Math.PI/2) * spiralForce * 0.3;
+                        }
+                        break;
+                        
+                    case 'explosion':
+                        // 爆炸效果 - 远离鼠标
+                        if (distance < 100) {
+                            const force = (100 - distance) / 100;
+                            this.vx -= (dx / distance) * force * 0.8;
+                            this.vy -= (dy / distance) * force * 0.8;
+                        }
+                        break;
+                        
+                    case 'wave':
+                        // 波浪效果 - 正弦波运动
+                        this.vx += Math.sin(Date.now() * 0.001 + this.x * 0.01) * 0.1;
+                        this.vy += Math.cos(Date.now() * 0.001 + this.y * 0.01) * 0.1;
+                        break;
+                }
+                
+                // 添加阻尼
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+                
+                // 更新位置
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // 边界检测
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+                
+                // 保持在画布内
+                this.x = Math.max(0, Math.min(canvas.width, this.x));
+                this.y = Math.max(0, Math.min(canvas.height, this.y));
+                
+                // 生命周期
+                this.life -= this.decay;
+                this.alpha = this.life;
+            }
+            
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                
+                // 添加发光效果
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+        
+        function createParticles() {
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height
+                ));
+            }
+        }
+        
+        function drawConnections() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.globalAlpha = (100 - distance) / 100 * 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        function animate() {
+            // 创建渐变背景
+            const gradient = ctx.createRadialGradient(
+                mouseX, mouseY, 0,
+                mouseX, mouseY, 300
+            );
+            gradient.addColorStop(0, 'rgba(102, 126, 234, 0.1)');
+            gradient.addColorStop(1, 'rgba(118, 75, 162, 0.05)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制连接线
+            drawConnections();
+            
+            // 更新和绘制粒子
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                
+                // 移除死亡的粒子
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // 添加新粒子
+            if (particles.length < 100) {
+                particles.push(new Particle(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height
+                ));
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // 鼠标移动事件
+        canvas.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        
+        // 触摸事件支持
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            mouseX = e.touches[0].clientX;
+            mouseY = e.touches[0].clientY;
+        });
+        
+        // 窗口大小调整
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // 效果切换按钮事件
+        document.getElementById('effectBtn').addEventListener('click', () => {
+            currentEffect = (currentEffect + 1) % effects.length;
+            const effectNames = {
+                'flow': '流动效果',
+                'spiral': '螺旋效果', 
+                'explosion': '爆炸效果',
+                'wave': '波浪效果'
+            };
+            document.getElementById('effectBtn').textContent = effectNames[effects[currentEffect]];
+            
+            // 清除现有粒子并重新生成
+            particles = [];
+            createParticles();
+        });
+        
+        // 初始化
+        createParticles();
+        animate();
+    </script>
+</body>
+</html>
