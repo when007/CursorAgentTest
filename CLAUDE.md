@@ -90,3 +90,5 @@ uv run python -m http.server 8080 --bind 0.0.0.0
 - 始终使用 uv 进行 Python 包管理，而不是直接使用 pip
 - 使用 uv run python 而不是直接的 python3 命令
 - 使用claude code提交规范的commit
+- 每次使用curl命令的时候,超时时间不超过3s
+- 每次我说"合代码"的时候,你就执行ci和push.
