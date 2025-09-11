@@ -102,7 +102,7 @@
     </div>
     
     <div class="controls">
-        <p>💡 提示：流星效果 | 太阳系真实色彩 | 拖尾光效</p>
+        <p>💡 提示：真实比例太阳系 | 典型位置关系标记 | 按空格键保存截图</p>
     </div>
     
     <button class="effect-button" id="effectBtn">切换效果</button>
@@ -139,83 +139,83 @@
             '#424242', // 炭灰
         ];
         
-        // 太阳系数据
+        // 太阳系数据（基于真实比例）
         const solarSystemData = {
             sun: {
                 name: '太阳',
-                radius: 30,
+                radius: 25,
                 color: '#FDB813',
                 glowColor: '#FFEB3B',
                 x: 0, y: 0,
-                glowRadius: 60
+                glowRadius: 50
             },
             planets: [
                 {
                     name: '水星',
-                    radius: 4,
+                    radius: 3,
                     color: '#8C7853',
-                    orbitRadius: 80,
-                    orbitSpeed: 0.04,
-                    angle: 0
+                    orbitRadius: 58,  // 0.39 AU
+                    orbitSpeed: 0.008,
+                    angle: Math.random() * Math.PI * 2
                 },
                 {
                     name: '金星',
-                    radius: 8,
+                    radius: 7,
                     color: '#FFC649',
-                    orbitRadius: 120,
-                    orbitSpeed: 0.015,
-                    angle: 0
+                    orbitRadius: 108, // 0.72 AU
+                    orbitSpeed: 0.006,
+                    angle: Math.random() * Math.PI * 2
                 },
                 {
                     name: '地球',
-                    radius: 8,
+                    radius: 7,
                     color: '#4A90E2',
-                    orbitRadius: 160,
-                    orbitSpeed: 0.01,
-                    angle: 0,
+                    orbitRadius: 150, // 1.00 AU (基准)
+                    orbitSpeed: 0.005,
+                    angle: Math.random() * Math.PI * 2,
                     hasAtmosphere: true
                 },
                 {
                     name: '火星',
-                    radius: 6,
+                    radius: 5,
                     color: '#CD5C5C',
-                    orbitRadius: 200,
-                    orbitSpeed: 0.008,
-                    angle: 0
+                    orbitRadius: 228, // 1.52 AU
+                    orbitSpeed: 0.004,
+                    angle: Math.random() * Math.PI * 2
                 },
                 {
                     name: '木星',
-                    radius: 20,
+                    radius: 15,
                     color: '#D2691E',
-                    orbitRadius: 280,
+                    orbitRadius: 350, // 2.33 AU (压缩比例以适应屏幕)
                     orbitSpeed: 0.002,
-                    angle: 0,
+                    angle: Math.random() * Math.PI * 2,
                     hasBands: true
                 },
                 {
                     name: '土星',
-                    radius: 18,
+                    radius: 13,
                     color: '#FAD5A5',
-                    orbitRadius: 360,
-                    orbitSpeed: 0.0009,
-                    angle: 0,
+                    orbitRadius: 420, // 2.80 AU (压缩比例)
+                    orbitSpeed: 0.0015,
+                    angle: Math.random() * Math.PI * 2,
                     hasRings: true
                 },
                 {
                     name: '天王星',
-                    radius: 12,
+                    radius: 10,
                     color: '#4FD0E7',
-                    orbitRadius: 440,
-                    orbitSpeed: 0.0004,
-                    angle: 0
+                    orbitRadius: 480, // 3.20 AU (压缩比例)
+                    orbitSpeed: 0.001,
+                    angle: Math.random() * Math.PI * 2
                 },
                 {
                     name: '海王星',
-                    radius: 12,
+                    radius: 10,
                     color: '#4169E1',
-                    orbitRadius: 500,
-                    orbitSpeed: 0.0001,
-                    angle: 0
+                    orbitRadius: 530, // 3.53 AU (压缩比例)
+                    orbitSpeed: 0.0008,
+                    angle: Math.random() * Math.PI * 2
                 }
             ]
         };
@@ -447,6 +447,12 @@
             ctx.shadowColor = sun.glowColor;
             ctx.fill();
             
+            // 太阳标签
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(sun.name, sun.x, sun.y - sun.radius - 12);
+            
             ctx.restore();
             
             // 绘制行星
@@ -454,6 +460,9 @@
                 const planet = planets[i];
                 drawPlanet(planet);
             }
+            
+            // 绘制特殊位置关系标记
+            drawSpecialAlignments();
         }
         
         function drawPlanet(planet) {
@@ -508,10 +517,142 @@
             }
             
             // 行星标签
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.font = '12px Arial';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 12px Arial';
             ctx.textAlign = 'center';
             ctx.fillText(planet.name, planet.x, planet.y - planet.radius - 8);
+            
+            ctx.restore();
+        }
+        
+        // 典型位置关系预设
+        const planetaryConfigurations = {
+            innerPlanets: {
+                name: '内行星排列',
+                description: '水星、金星、地球、火星的相对位置',
+                setup: function() {
+                    setPlanetAngle('水星', 0);
+                    setPlanetAngle('金星', Math.PI / 4);
+                    setPlanetAngle('地球', Math.PI / 2);
+                    setPlanetAngle('火星', 3 * Math.PI / 4);
+                }
+            },
+            opposition: {
+                name: '火星冲日',
+                description: '地球-太阳-火星直线排列',
+                setup: function() {
+                    setPlanetAngle('地球', 0);
+                    setPlanetAngle('火星', Math.PI);
+                    setPlanetAngle('木星', Math.PI / 6);
+                    setPlanetAngle('土星', Math.PI / 3);
+                }
+            },
+            conjunction: {
+                name: '木星合日',
+                description: '木星、地球、太阳近似直线',
+                setup: function() {
+                    setPlanetAngle('地球', 0);
+                    setPlanetAngle('木星', 0.1);
+                    setPlanetAngle('土星', Math.PI / 4);
+                    setPlanetAngle('火星', Math.PI / 2);
+                }
+            }
+        };
+        
+        let currentConfig = 0;
+        const configs = Object.keys(planetaryConfigurations);
+        
+        function setPlanetAngle(name, angle) {
+            planets.forEach(planet => {
+                if (planet.name === name) {
+                    planet.angle = angle;
+                    const sun = planets[0];
+                    planet.x = sun.x + Math.cos(angle) * planet.orbitRadius;
+                    planet.y = sun.y + Math.sin(angle) * planet.orbitRadius;
+                }
+            });
+        }
+        
+        function applyConfiguration(configName) {
+            if (planetaryConfigurations[configName]) {
+                planetaryConfigurations[configName].setup();
+            }
+        }
+        
+        // 特殊位置关系检测和标记
+        function drawSpecialAlignments() {
+            const sun = planets[0];
+            let earth, mars, jupiter, saturn, venus, mercury;
+            
+            // 找到关键行星
+            planets.forEach(planet => {
+                if (planet.name === '地球') earth = planet;
+                if (planet.name === '火星') mars = planet;
+                if (planet.name === '木星') jupiter = planet;
+                if (planet.name === '土星') saturn = planet;
+                if (planet.name === '金星') venus = planet;
+                if (planet.name === '水星') mercury = planet;
+            });
+            
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            
+            // 检查并标记特殊位置关系
+            if (earth && mars && jupiter) {
+                // 地球-火星-木星位置关系
+                const earthAngle = Math.atan2(earth.y - sun.y, earth.x - sun.x);
+                const marsAngle = Math.atan2(mars.y - sun.y, mars.x - sun.x);
+                const jupiterAngle = Math.atan2(jupiter.y - sun.y, jupiter.x - sun.x);
+                
+                // 检查是否接近直线排列（冲日或合日）
+                const angleDiff1 = Math.abs(earthAngle - marsAngle);
+                const angleDiff2 = Math.abs(marsAngle - jupiterAngle);
+                
+                if (angleDiff1 < 0.3 || angleDiff2 < 0.3) {
+                    // 标记直线排列
+                    ctx.beginPath();
+                    ctx.moveTo(sun.x, sun.y);
+                    ctx.lineTo(earth.x, earth.y);
+                    ctx.lineTo(mars.x, mars.y);
+                    ctx.lineTo(jupiter.x, jupiter.y);
+                    ctx.stroke();
+                    
+                    // 添加标签
+                    ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+                    ctx.font = '14px Arial';
+                    ctx.fillText('行星排列', sun.x + 100, sun.y - 50);
+                }
+            }
+            
+            if (earth && venus) {
+                // 地球-金星关系（内行星）
+                const earthDist = Math.sqrt((earth.x - sun.x)**2 + (earth.y - sun.y)**2);
+                const venusDist = Math.sqrt((venus.x - sun.x)**2 + (venus.y - sun.y)**2);
+                
+                // 标记内行星轨道关系
+                ctx.beginPath();
+                ctx.arc(sun.x, sun.y, Math.max(earthDist, venusDist) + 20, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
+                ctx.font = '12px Arial';
+                ctx.fillText('内行星区', sun.x + Math.max(earthDist, venusDist) + 30, sun.y);
+            }
+            
+            // 显示当前配置信息
+            const configName = configs[currentConfig];
+            const config = planetaryConfigurations[configName];
+            if (config) {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`配置: ${config.name}`, 20, canvas.height - 60);
+                ctx.font = '12px Arial';
+                ctx.fillText(config.description, 20, canvas.height - 40);
+                ctx.fillText('按数字键1-3切换配置', 20, canvas.height - 20);
+            }
             
             ctx.restore();
         }
@@ -594,6 +735,40 @@
             canvas.height = window.innerHeight;
         });
         
+        // 键盘事件处理
+        document.addEventListener('keydown', (e) => {
+            if (currentMode === 'solar') {
+                switch(e.key) {
+                    case '1':
+                        currentConfig = 0;
+                        applyConfiguration(configs[currentConfig]);
+                        break;
+                    case '2':
+                        currentConfig = 1;
+                        applyConfiguration(configs[currentConfig]);
+                        break;
+                    case '3':
+                        currentConfig = 2;
+                        applyConfiguration(configs[currentConfig]);
+                        break;
+                    case ' ':
+                        // 空格键保存截图
+                        saveScreenshot();
+                        break;
+                }
+            }
+        });
+        
+        // 截图保存功能
+        function saveScreenshot() {
+            const link = document.createElement('a');
+            const configName = configs[currentConfig];
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            link.download = `太阳系_${planetaryConfigurations[configName].name}_${timestamp}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
         // 效果切换按钮事件
         document.getElementById('effectBtn').addEventListener('click', () => {
             currentEffect = (currentEffect + 1) % effects.length;
@@ -616,6 +791,9 @@
             
             if (currentMode === 'solar') {
                 createSolarSystem();
+                // 应用默认配置
+                currentConfig = 0;
+                applyConfiguration(configs[currentConfig]);
                 document.getElementById('effectBtn').style.display = 'none';
                 document.getElementById('pauseBtn').textContent = '切换模式';
             } else {

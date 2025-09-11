@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>太阳系位置关系截图演示</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .config-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        canvas {
+            border: 1px solid #333;
+            margin: 10px 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌌 太阳系典型位置关系截图演示</h1>
+        <p>这个页面将演示3个典型的行星位置关系，并自动保存截图。</p>
+        
+        <div class="config-section">
+            <h2>配置1: 内行星排列</h2>
+            <p>水星、金星、地球、火星的相对位置关系</p>
+            <canvas id="canvas1" width="800" height="600"></canvas>
+            <button onclick="saveScreenshot('canvas1', '内行星排列')">保存截图</button>
+        </div>
+        
+        <div class="config-section">
+            <h2>配置2: 火星冲日</h2>
+            <p>地球-太阳-火星直线排列（冲日现象）</p>
+            <canvas id="canvas2" width="800" height="600"></canvas>
+            <button onclick="saveScreenshot('canvas2', '火星冲日')">保存截图</button>
+        </div>
+        
+        <div class="config-section">
+            <h2>配置3: 木星合日</h2>
+            <p>木星、地球、太阳近似直线（合日现象）</p>
+            <canvas id="canvas3" width="800" height="600"></canvas>
+            <button onclick="saveScreenshot('canvas3', '木星合日')">保存截图</button>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="saveAllScreenshots()" style="background: #ff6b6b; font-size: 18px; padding: 15px 30px;">
+                📸 保存所有截图
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 太阳系数据（基于真实比例）
+        const solarSystemData = {
+            sun: {
+                name: '太阳',
+                radius: 25,
+                color: '#FDB813',
+                glowColor: '#FFEB3B',
+                glowRadius: 50
+            },
+            planets: [
+                {
+                    name: '水星',
+                    radius: 3,
+                    color: '#8C7853',
+                    orbitRadius: 58,  // 0.39 AU
+                    angle: 0
+                },
+                {
+                    name: '金星',
+                    radius: 7,
+                    color: '#FFC649',
+                    orbitRadius: 108, // 0.72 AU
+                    angle: 0
+                },
+                {
+                    name: '地球',
+                    radius: 7,
+                    color: '#4A90E2',
+                    orbitRadius: 150, // 1.00 AU (基准)
+                    angle: 0,
+                    hasAtmosphere: true
+                },
+                {
+                    name: '火星',
+                    radius: 5,
+                    color: '#CD5C5C',
+                    orbitRadius: 228, // 1.52 AU
+                    angle: 0
+                },
+                {
+                    name: '木星',
+                    radius: 15,
+                    color: '#D2691E',
+                    orbitRadius: 350, // 2.33 AU (压缩比例)
+                    angle: 0,
+                    hasBands: true
+                },
+                {
+                    name: '土星',
+                    radius: 13,
+                    color: '#FAD5A5',
+                    orbitRadius: 420, // 2.80 AU (压缩比例)
+                    angle: 0,
+                    hasRings: true
+                },
+                {
+                    name: '天王星',
+                    radius: 10,
+                    color: '#4FD0E7',
+                    orbitRadius: 480, // 3.20 AU (压缩比例)
+                    angle: 0
+                },
+                {
+                    name: '海王星',
+                    radius: 10,
+                    color: '#4169E1',
+                    orbitRadius: 530, // 3.53 AU (压缩比例)
+                    angle: 0
+                }
+            ]
+        };
+
+        // 三个典型配置
+        const configurations = {
+            innerPlanets: {
+                name: '内行星排列',
+                description: '水星、金星、地球、火星的相对位置',
+                setup: function(planets) {
+                    setPlanetAngle(planets, '水星', 0);
+                    setPlanetAngle(planets, '金星', Math.PI / 4);
+                    setPlanetAngle(planets, '地球', Math.PI / 2);
+                    setPlanetAngle(planets, '火星', 3 * Math.PI / 4);
+                }
+            },
+            opposition: {
+                name: '火星冲日',
+                description: '地球-太阳-火星直线排列',
+                setup: function(planets) {
+                    setPlanetAngle(planets, '地球', 0);
+                    setPlanetAngle(planets, '火星', Math.PI);
+                    setPlanetAngle(planets, '木星', Math.PI / 6);
+                    setPlanetAngle(planets, '土星', Math.PI / 3);
+                }
+            },
+            conjunction: {
+                name: '木星合日',
+                description: '木星、地球、太阳近似直线',
+                setup: function(planets) {
+                    setPlanetAngle(planets, '地球', 0);
+                    setPlanetAngle(planets, '木星', 0.1);
+                    setPlanetAngle(planets, '土星', Math.PI / 4);
+                    setPlanetAngle(planets, '火星', Math.PI / 2);
+                }
+            }
+        };
+
+        function setPlanetAngle(planets, name, angle) {
+            planets.forEach(planet => {
+                if (planet.name === name) {
+                    planet.angle = angle;
+                }
+            });
+        }
+
+        function drawSolarSystem(canvasId, configName) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // 清空画布
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 创建太阳系对象
+            const sun = {
+                ...solarSystemData.sun,
+                x: centerX,
+                y: centerY
+            };
+
+            const planets = solarSystemData.planets.map(planetData => ({
+                ...planetData,
+                x: centerX + Math.cos(planetData.angle) * planetData.orbitRadius,
+                y: centerY + Math.sin(planetData.angle) * planetData.orbitRadius
+            }));
+
+            // 应用配置
+            if (configurations[configName]) {
+                configurations[configName].setup(planets);
+                // 重新计算位置
+                planets.forEach(planet => {
+                    planet.x = centerX + Math.cos(planet.angle) * planet.orbitRadius;
+                    planet.y = centerY + Math.sin(planet.angle) * planet.orbitRadius;
+                });
+            }
+
+            // 绘制轨道
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            planets.forEach(planet => {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, planet.orbitRadius, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+
+            // 绘制太阳
+            drawSun(ctx, sun);
+
+            // 绘制行星
+            planets.forEach(planet => {
+                drawPlanet(ctx, planet);
+            });
+
+            // 绘制特殊标记
+            drawSpecialAlignments(ctx, sun, planets, configName);
+
+            // 绘制标题
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(configurations[configName].name, centerX, 30);
+            ctx.font = '14px Arial';
+            ctx.fillText(configurations[configName].description, centerX, 50);
+        }
+
+        function drawSun(ctx, sun) {
+            // 太阳光晕
+            const gradient = ctx.createRadialGradient(
+                sun.x, sun.y, 0,
+                sun.x, sun.y, sun.glowRadius
+            );
+            gradient.addColorStop(0, sun.glowColor + '80');
+            gradient.addColorStop(0.3, sun.glowColor + '40');
+            gradient.addColorStop(1, 'transparent');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(sun.x, sun.y, sun.glowRadius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 太阳主体
+            ctx.beginPath();
+            ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);
+            ctx.fillStyle = sun.color;
+            ctx.fill();
+
+            // 太阳发光
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = sun.glowColor;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // 太阳标签
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(sun.name, sun.x, sun.y - sun.radius - 12);
+        }
+
+        function drawPlanet(ctx, planet) {
+            // 行星光晕
+            const gradient = ctx.createRadialGradient(
+                planet.x, planet.y, 0,
+                planet.x, planet.y, planet.radius * 2
+            );
+            gradient.addColorStop(0, planet.color + '60');
+            gradient.addColorStop(1, 'transparent');
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(planet.x, planet.y, planet.radius * 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 行星主体
+            ctx.beginPath();
+            ctx.arc(planet.x, planet.y, planet.radius, 0, Math.PI * 2);
+            ctx.fillStyle = planet.color;
+            ctx.fill();
+
+            // 特殊效果
+            if (planet.hasAtmosphere) {
+                ctx.strokeStyle = 'rgba(135, 206, 235, 0.5)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            if (planet.hasRings) {
+                ctx.strokeStyle = 'rgba(250, 213, 165, 0.6)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.ellipse(planet.x, planet.y, planet.radius * 1.8, planet.radius * 0.6, 0, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            if (planet.hasBands) {
+                ctx.strokeStyle = 'rgba(139, 69, 19, 0.4)';
+                ctx.lineWidth = 1;
+                for (let j = -planet.radius * 0.6; j <= planet.radius * 0.6; j += 3) {
+                    ctx.beginPath();
+                    ctx.moveTo(planet.x - planet.radius * 0.8, planet.y + j);
+                    ctx.lineTo(planet.x + planet.radius * 0.8, planet.y + j);
+                    ctx.stroke();
+                }
+            }
+
+            // 行星标签
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(planet.name, planet.x, planet.y - planet.radius - 8);
+        }
+
+        function drawSpecialAlignments(ctx, sun, planets, configName) {
+            let earth, mars, jupiter, venus, mercury;
+
+            // 找到关键行星
+            planets.forEach(planet => {
+                if (planet.name === '地球') earth = planet;
+                if (planet.name === '火星') mars = planet;
+                if (planet.name === '木星') jupiter = planet;
+                if (planet.name === '金星') venus = planet;
+                if (planet.name === '水星') mercury = planet;
+            });
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+
+            // 根据不同配置绘制特殊标记
+            if (configName === 'opposition' && earth && mars) {
+                // 火星冲日 - 地球-太阳-火星直线
+                ctx.beginPath();
+                ctx.moveTo(earth.x, earth.y);
+                ctx.lineTo(sun.x, sun.y);
+                ctx.lineTo(mars.x, mars.y);
+                ctx.stroke();
+
+                // 添加标签
+                ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+                ctx.font = '14px Arial';
+                ctx.fillText('冲日排列', sun.x + 80, sun.y - 40);
+            }
+
+            if (configName === 'conjunction' && earth && jupiter) {
+                // 木星合日 - 木星和地球在太阳同侧
+                ctx.beginPath();
+                ctx.moveTo(sun.x, sun.y);
+                ctx.lineTo(earth.x, earth.y);
+                ctx.lineTo(jupiter.x, jupiter.y);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(255, 100, 100, 0.8)';
+                ctx.font = '14px Arial';
+                ctx.fillText('合日排列', sun.x + 80, sun.y - 40);
+            }
+
+            if (configName === 'innerPlanets' && mercury && venus && earth && mars) {
+                // 内行星区域标记
+                const maxRadius = Math.max(mercury.orbitRadius, venus.orbitRadius, earth.orbitRadius, mars.orbitRadius);
+                ctx.beginPath();
+                ctx.arc(sun.x, sun.y, maxRadius + 20, 0, Math.PI * 2);
+                ctx.stroke();
+
+                ctx.fillStyle = 'rgba(0, 255, 255, 0.6)';
+                ctx.font = '12px Arial';
+                ctx.fillText('内行星区', sun.x + maxRadius + 30, sun.y);
+            }
+
+            ctx.restore();
+        }
+
+        function saveScreenshot(canvasId, configName) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+            link.download = `太阳系_${configName}_${timestamp}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function saveAllScreenshots() {
+            saveScreenshot('canvas1', '内行星排列');
+            setTimeout(() => saveScreenshot('canvas2', '火星冲日'), 500);
+            setTimeout(() => saveScreenshot('canvas3', '木星合日'), 1000);
+        }
+
+        // 初始化所有画布
+        window.onload = function() {
+            drawSolarSystem('canvas1', 'innerPlanets');
+            drawSolarSystem('canvas2', 'opposition');
+            drawSolarSystem('canvas3', 'conjunction');
+        };
+    </script>
+</body>
+</html>
