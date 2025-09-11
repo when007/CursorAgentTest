@@ -63,6 +63,35 @@
         .effect-button:active {
             transform: scale(0.95);
         }
+        
+        .pause-button-centered {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            backdrop-filter: blur(15px);
+            transition: all 0.3s ease;
+            z-index: 20;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .pause-button-centered:hover {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .pause-button-centered:active {
+            transform: translate(-50%, -50%) scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -76,7 +105,7 @@
     </div>
     
     <button class="effect-button" id="effectBtn">切换效果</button>
-    <button class="effect-button" id="pauseBtn" style="right: 180px;">暂停</button>
+    <button class="pause-button-centered" id="pauseBtn">暂停</button>
     
     <canvas id="canvas"></canvas>
     
